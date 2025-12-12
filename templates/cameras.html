@@ -1,0 +1,368 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Available Cameras</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f0f0f0;
+                padding: 0;
+                margin: 0;
+            }
+            .navbar {
+                background: #333;
+                padding: 1rem;
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+            .navbar a {
+                color: white;
+                text-decoration: none;
+                padding: 0.5rem 1.5rem;
+                border-radius: 5px;
+                transition: background 0.3s;
+            }
+            .navbar a:hover {
+                background: #555;
+            }
+            .navbar a.active {
+                background: #4caf50;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 2rem auto;
+                padding: 0 2rem;
+            }
+            .header {
+                background: white;
+                padding: 2rem;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 2rem;
+            }
+            .stats {
+                display: flex;
+                gap: 2rem;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+            .stat-card {
+                background: #4caf50;
+                color: white;
+                padding: 1rem 2rem;
+                border-radius: 8px;
+                text-align: center;
+            }
+            .stat-card h3 {
+                margin: 0;
+                font-size: 2rem;
+            }
+            .stat-card p {
+                margin: 0.5rem 0 0 0;
+                opacity: 0.9;
+            }
+            .camera-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 2rem;
+            }
+            .camera-card {
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                transition: transform 0.3s;
+            }
+            .camera-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            }
+            .camera-info {
+                padding: 1.5rem;
+            }
+            .camera-name {
+                font-size: 1.3rem;
+                font-weight: bold;
+                margin: 0 0 1rem 0;
+                color: #333;
+            }
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #eee;
+            }
+            .info-row:last-child {
+                border-bottom: none;
+            }
+            .info-label {
+                color: #666;
+                font-weight: 500;
+            }
+            .info-value {
+                color: #333;
+            }
+            .status-badge {
+                display: inline-block;
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.85rem;
+                font-weight: bold;
+            }
+            .status-active {
+                background: #4caf50;
+                color: white;
+            }
+            .status-inactive {
+                background: #f44336;
+                color: white;
+            }
+            .status-error {
+                background: #ff9800;
+                color: white;
+            }
+            .loading {
+                text-align: center;
+                padding: 4rem;
+                color: #666;
+                font-size: 1.2rem;
+            }
+            .refresh-btn {
+                background: #2196f3;
+                color: white;
+                border: none;
+                padding: 0.75rem 1.5rem;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 1rem;
+                margin-top: 1rem;
+            }
+            .refresh-btn:hover {
+                background: #0b7dda;
+            }
+            .action-btn {
+                background: #4caf50;
+                color: white;
+                border: none;
+                padding: 0.75rem 1rem;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-top: 1rem;
+                width: 100%;
+                font-size: 1rem;
+                font-weight: bold;
+                transition: background 0.3s;
+            }
+            .action-btn:hover {
+                background: #45a049;
+            }
+            .action-btn:disabled {
+                background: #cccccc;
+                cursor: not-allowed;
+            }
+            .deactivate-btn {
+                background: #f44336;
+            }
+            .deactivate-btn:hover {
+                background: #d32f2f;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="navbar">
+            <a href="{{ url_for('index') }}">Camera Feeds</a>
+            <a href="{{ url_for('cameras_matching_page') }}" class="active"
+                >Available Cameras</a
+            >
+            <a href="{{ url_for('configurator_page') }}">Camera Configurator</a>
+        </div>
+
+        <div class="container">
+            <div class="header">
+                <h1>Camera Monitoring Dashboard</h1>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3 id="total-cameras">0</h3>
+                        <p>Total Cameras</p>
+                    </div>
+                    <div class="stat-card" style="background: #2196f3">
+                        <h3 id="active-cameras">0</h3>
+                        <p>Active Cameras</p>
+                    </div>
+                    <div class="stat-card" style="background: #ff9800">
+                        <h3 id="inactive-cameras">0</h3>
+                        <p>Inactive Cameras</p>
+                    </div>
+                </div>
+                <button class="refresh-btn" onclick="loadCameras()">
+                    Refresh Camera List
+                </button>
+            </div>
+
+            <div id="camera-list">
+                <div class="loading">Scanning for cameras...</div>
+            </div>
+        </div>
+
+        <script>
+            function loadCameras() {
+                const container = document.getElementById("camera-list");
+                container.innerHTML =
+                    '<div class="loading">Scanning for cameras...</div>';
+
+                fetch("/video/avaliable_cameras")
+                    .then((response) => response.json())
+                    .then((cameras) => {
+                        if (cameras.length === 0) {
+                            container.innerHTML =
+                                '<div class="loading">No cameras found</div>';
+                            return;
+                        }
+
+                        document.getElementById("total-cameras").textContent =
+                            cameras.length;
+                        const activeCameras = cameras.filter(
+                            (cam) => cam.status === "Active",
+                        ).length;
+                        document.getElementById("active-cameras").textContent =
+                            activeCameras;
+                        document.getElementById(
+                            "inactive-cameras",
+                        ).textContent = cameras.length - activeCameras;
+
+                        let html = '<div class="camera-grid">';
+
+                        cameras.forEach((cam) => {
+                            const statusClass =
+                                cam.status === "Active"
+                                    ? "status-active"
+                                    : cam.status === "Inactive"
+                                      ? "status-inactive"
+                                      : "status-error";
+
+                            const isActive = cam.status === "Active";
+                            const buttonText = isActive
+                                ? "Deactivate Camera"
+                                : "Activate Camera";
+                            const buttonClass = isActive
+                                ? "action-btn deactivate-btn"
+                                : "action-btn";
+                            const buttonAction = isActive
+                                ? `deactivate(${cam.id})`
+                                : `activate(${cam.id})`;
+
+                            html += `
+                                <div class="camera-card">
+                                    <div class="camera-info">
+                                        <h2 class="camera-name">${cam.name}</h2>
+                                        <div class="info-row">
+                                            <span class="info-label">Status:</span>
+                                            <span class="status-badge ${statusClass}">${cam.status}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Index:</span>
+                                            <span class="info-value">${cam.index}</span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="info-label">Path:</span>
+                                            <span class="info-value">${cam.path}</span>
+                                        </div>
+                                        <button class="${buttonClass}" onclick="${buttonAction}" id="btn-${cam.id}">
+                                            ${buttonText}
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        html += "</div>";
+                        container.innerHTML = html;
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                        container.innerHTML =
+                            '<div class="loading" style="color: red;">❌ Error loading cameras</div>';
+                    });
+            }
+
+            function activate(cameraId) {
+                const btn = document.getElementById(`btn-${cameraId}`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = "Activating...";
+                }
+
+                fetch("/video/activate_camera", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ camera_id: cameraId }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            alert(`${data.message}`);
+                            loadCameras();
+                        } else {
+                            alert(
+                                `Failed to activate camera: ${data.message || "Unknown error"}`,
+                            );
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.textContent = "Activate Camera";
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                        alert("Failed to activate camera: Network error");
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = "Activate Camera";
+                        }
+                    });
+            }
+
+            function deactivate(cameraId) {
+                const btn = document.getElementById(`btn-${cameraId}`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = "Deactivating...";
+                }
+
+                fetch("/video/deactivate_camera", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ camera_id: cameraId }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            alert(`${data.message}`);
+                            loadCameras();
+                        } else {
+                            alert(
+                                `Failed to deactivate camera: ${data.message || "Unknown error"}`,
+                            );
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.textContent = "Deactivate Camera";
+                            }
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Error:", error);
+                        alert("Failed to deactivate camera: Network error");
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = "Deactivate Camera";
+                        }
+                    });
+            }
+
+            loadCameras();
+            setInterval(loadCameras, 30000);
+        </script>
+    </body>
+</html>

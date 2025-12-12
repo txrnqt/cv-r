@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Camera Feeds</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                background: #f0f0f0;
+                padding: 0;
+                margin: 0;
+                position: relative;
+                overflow: hidden;
+            }
+            .navbar {
+                background: #333;
+                padding: 1rem;
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+            .navbar a {
+                color: white;
+                text-decoration: none;
+                padding: 0.5rem 1.5rem;
+                border-radius: 5px;
+                transition: background 0.3s;
+            }
+            .navbar a:hover {
+                background: #555;
+            }
+            .navbar a.active {
+                background: #4caf50;
+            }
+            .content {
+                padding: 2rem;
+            }
+            .feeds {
+                display: flex;
+                gap: 2rem;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .feed {
+                background: white;
+                padding: 1rem;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            img {
+                max-width: 100%;
+                border-radius: 5px;
+            }
+            .button-container {
+                margin: 2rem;
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .hello-button {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+                background: #4caf50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                text-decoration: none;
+                display: inline-block;
+            }
+            .hello-button:hover {
+                background: #45a049;
+            }
+            .camera-button {
+                background: #2196f3;
+            }
+            .camera-button:hover {
+                background: #0b7dda;
+            }
+            .hello-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                display: none;
+                z-index: 1000;
+                overflow: hidden;
+            }
+            .hello-text {
+                position: absolute;
+                color: black;
+                font-size: 1.5rem;
+                font-weight: bold;
+                white-space: nowrap;
+            }
+            @keyframes explode {
+                0% {
+                    transform: translate(0, 0) scale(0);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(var(--tx), var(--ty)) scale(1);
+                    opacity: 1;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="navbar">
+            <a href="{{ url_for('index') }}" class="active">Camera Feeds</a>
+            <a href="{{ url_for('cameras_matching_page') }}"
+                >Available Cameras</a
+            >
+            <a href="{{ url_for('configurator_page') }}">Camera Configurator</a>
+        </div>
+
+        <div class="content">
+            <h1>Camera Feeds</h1>
+
+            <div class="button-container">
+                <button class="hello-button" onclick="showHelloWorld()">
+                    Hello World
+                </button>
+            </div>
+
+            <div class="feeds">
+                <div class="feed">
+                    <h2>Original</h2>
+                    <img
+                        src="{{ url_for('video_feed_raw') }}"
+                        alt="Original Feed"
+                    />
+                </div>
+                <div class="feed">
+                    <h2>Detection</h2>
+                    <img
+                        src="{{ url_for('video_feed_processed') }}"
+                        alt="Detection Feed"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="hello-overlay"
+            id="helloOverlay"
+            onclick="hideHelloWorld()"
+        ></div>
+
+        <script>
+            function showHelloWorld() {
+                const overlay = document.getElementById("helloOverlay");
+                overlay.style.display = "block";
+                overlay.innerHTML = "";
+
+                const centerX = window.innerWidth / 2;
+                const centerY = window.innerHeight / 2;
+
+                // Generate 500 "Hello World" texts to completely cover screen
+                for (let i = 0; i < 500; i++) {
+                    const helloText = document.createElement("div");
+                    helloText.className = "hello-text";
+                    helloText.textContent = "Hello World";
+
+                    // Start from center
+                    helloText.style.left = centerX + "px";
+                    helloText.style.top = centerY + "px";
+
+                    // Random explosion direction
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 1500 + 500; // Explosion distance
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+
+                    helloText.style.setProperty("--tx", tx + "px");
+                    helloText.style.setProperty("--ty", ty + "px");
+
+                    // Random animation timing for staggered explosion effect
+                    const delay = Math.random() * 0.3;
+                    const duration = Math.random() * 0.5 + 0.5;
+                    helloText.style.animation = `explode ${duration}s ease-out ${delay}s forwards`;
+
+                    overlay.appendChild(helloText);
+                }
+            }
+
+            function hideHelloWorld() {
+                document.getElementById("helloOverlay").style.display = "none";
+            }
+        </script>
+    </body>
+</html>

@@ -1,7 +1,17 @@
 mod camera;
+mod detections;
 
 use camera::Camera;
-use std::io;
+use detections::dector;
+use std::{f32, io};
+
+static mut RAW_FRAME: Vec<u8> = Vec::new();
+static mut PROCESSED_FRAME: Vec<u8> = Vec::new();
+static mut YAW: f32 = 0.0;
+static mut CAMERAS: Vec<Camera>;
+static mut DECECTOR: dector = dector::new("path");
+
+fn captureLoop() {}
 
 fn main() -> io::Result<()> {
     let mut cam = Camera::new("/dev/video0")?;

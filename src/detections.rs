@@ -8,7 +8,7 @@ pub struct dector {
     session: Session,
 }
 
-pub impl dector {
+impl dector {
     pub fn new(path: String) -> ort::Result<()> {
         session = Session::builder()?
             .with_execution_providers([TensorRTExecutionProvider::default().build()])?

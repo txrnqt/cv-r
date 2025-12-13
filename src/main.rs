@@ -1,3 +1,4 @@
+mod appState;
 mod camera;
 mod detections;
 

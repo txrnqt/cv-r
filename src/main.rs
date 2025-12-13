@@ -4,10 +4,9 @@ mod detections;
 use camera::Camera;
 use detections::Detector;
 
-
 fn main() -> anyhow::Result<()> {
     let mut cam = Camera::new("/dev/video0")?;
-    let detector: Detector = Detector::new("src/content/jetson_orinnano.onnx")?;
+    let mut detector: Detector = Detector::new("src/content/jetson_orinnano.onnx")?;
     let mut results: Result<Vec<(f32, f32, f32, f32, f32)>, ort::Error>;
 
     cam.configure(640, 480)?;

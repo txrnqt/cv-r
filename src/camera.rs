@@ -1,4 +1,5 @@
 use std::io;
+use image::{ImageBuffer, RgbImage};
 use v4l::buffer::Type;
 use v4l::io::mmap::Stream;
 use v4l::io::traits::CaptureStream;
@@ -36,10 +37,11 @@ impl Camera {
         Ok(())
     }
 
-    pub fn capture_frame(&mut self) -> io::Result<Vec<u8>> {
+    pub fn capture_frame(&mut self) -> io::Result<RgbImage> {
         if let Some(stream) = &mut self.stream {
             let (buf, _meta) = stream.next()?;
-            Ok(buf.to_vec())
+            let img: RgbImage = ImageBuffer::from_raw(640, 480, buf.to_vec()).expect("Failed to create image buffer.");
+            Ok(img)
         } else {
             Err(io::Error::new(
                 io::ErrorKind::NotConnected,

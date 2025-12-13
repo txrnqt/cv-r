@@ -361,6 +361,7 @@ dependencies = [
 name = "cv-r"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "image",
  "ndarray 0.17.1",
  "ort",

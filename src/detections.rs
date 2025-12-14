@@ -11,9 +11,11 @@ impl Detector {
     }
 
     pub fn set_session<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
-        self.session::builder()?
-            .with_execution_providers([TensorRTExecutionProvider::default().build()])?
-            .commit_from_file(path)?;
+        self.session = Some(
+            Session::builder()?
+                .with_execution_providers([TensorRTExecutionProvider::default().build()])?
+                .commit_from_file(path)?,
+        );
         Ok(())
     }
 

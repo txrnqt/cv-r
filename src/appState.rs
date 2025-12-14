@@ -12,7 +12,7 @@ struct AppState {
     has_json: bool,
     camera: Option<Camera>,
     calibration_data: Option<CalibrationData>,
-} 
+}
 
 impl AppState {
     fn new() -> Self {
@@ -71,11 +71,14 @@ impl AppState {
     }
 
     fn create_detector<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
-        Detector::set_session(path);
+        self.detector.set_session(path)?;
         Ok(())
     }
 
-    fn run_inference(&mut self, image: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> Result<Vec, ort::Error> {
+    fn run_inference(
+        &mut self,
+        image: &ImageBuffer<Rgb<u8>, Vec<u8>>,
+    ) -> Result<Vec<(f32, f32, f32, f32, f32)>, ort::Error> {
         self.detector.run_inference(image)
     }
 }

@@ -1,3 +1,4 @@
+use anyhow::Ok;
 use image::RgbImage;
 use std::io;
 use v4l::buffer::Type;
@@ -8,22 +9,29 @@ use v4l::{Device, FourCC};
 
 pub struct Camera {
     device: Device,
-    stream: Option<Stream<'static>>,
+    stream: Option<Stream>,
 }
 
 impl Camera {
-    pub fn new(device_path: &str) -> io::Result<Self> {
-        let device = Device::with_path(device_path)?;
-        Ok(Camera {
-            device,
+    pub fn new() -> Self {
+        Self {
+            device: Device,
             stream: None,
-        })
+        }
+    }
+}
+
+    pub fn activate_camera<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
+        self.device = Device::with_path(path)?;
+        Ok(())
     }
 
+    //TODO: set fps
     pub fn configure(&mut self, width: u32, height: u32) -> io::Result<()> {
         let mut fmt = self.device.format()?;
         fmt.width = width;
         fmt.height = height;
+
         fmt.fourcc = FourCC::new(b"YUYV");
         self.device.set_format(&fmt)?;
 

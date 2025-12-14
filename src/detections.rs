@@ -2,7 +2,7 @@ use ndarray::Array4;
 use ort::{execution_providers::TensorRTExecutionProvider, session::Session, value::Value};
 
 pub struct Detector {
-    session: Option<Session>,
+    session: Arc<Session>,
 }
 
 impl Detector {
@@ -19,23 +19,39 @@ impl Detector {
         Ok(())
     }
 
-    pub fn run_inference(
-        &mut self,
+    pub async fn run_inference(
+        &self,
+        img: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
+    ) -> ort::Result<Vec<(f32, f32, f32, f32, f32)>> {
+        let img = img.clone();
+        let session = Arc::clone(&self.session);
+
+        tokio::task::spawn_blocking(move || Self::inference_impl(&session, &img))
+            .await
+            .map_err(|e| ort::OrtError::Execution(e.to_string()))?
+    }
+
+    fn inference_impl(
+        session: &Arc<Session>,
         img: &image::ImageBuffer<image::Rgb<u8>, Vec<u8>>,
     ) -> ort::Result<Vec<(f32, f32, f32, f32, f32)>> {
         let mut array = Array4::<f32>::zeros((1, 3, 640, 640));
-        for (i, pixel) in img.pixels().enumerate() {
+
+        use rayon::prelude::*;
+        img.pixels().enumerate().for_each(|(i, pixel)| {
             let h = (i / 640) as usize;
             let w = (i % 640) as usize;
-            array[[0, 0, h, w]] = pixel[0] as f32 / 255.0;
-            array[[0, 1, h, w]] = pixel[1] as f32 / 255.0;
-            array[[0, 2, h, w]] = pixel[2] as f32 / 255.0;
-        }
+            unsafe {
+                *array.get_mut([0, 0, h, w]).unwrap() = pixel[0] as f32 / 255.0;
+                *array.get_mut([0, 1, h, w]).unwrap() = pixel[1] as f32 / 255.0;
+                *array.get_mut([0, 2, h, w]).unwrap() = pixel[2] as f32 / 255.0;
+            }
+        });
 
         let shape = array.shape().to_vec();
         let (data, _offset) = array.into_raw_vec_and_offset();
         let input_tensor = Value::from_array((shape, data))?;
-        let outputs = self.session.run(ort::inputs![input_tensor])?;
+        let outputs = session.run(ort::inputs![input_tensor])?;
 
         let bboxes = {
             let (shape, data) = outputs[0].try_extract_tensor::<f32>()?;
@@ -57,7 +73,7 @@ impl Detector {
             bboxes
         };
         drop(outputs);
-        Ok(self.run_nms(bboxes, 0.45))
+        Ok(Self::run_nms(&bboxes, 0.45))
     }
 
     fn run_nms(

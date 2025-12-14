@@ -1,4 +1,3 @@
-use anyhow::Ok;
 use image::RgbImage;
 use std::io;
 use v4l::buffer::Type;
@@ -8,48 +7,58 @@ use v4l::video::Capture;
 use v4l::{Device, FourCC};
 
 pub struct Camera {
-    device: Device,
-    stream: Option<Stream>,
+    device: Option<Device>,
+    stream: Option<Box<dyn std::any::Any>>,
 }
 
 impl Camera {
     pub fn new() -> Self {
         Self {
-            device: Device,
+            device: None,
             stream: None,
         }
     }
-}
 
     pub fn activate_camera<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
-        self.device = Device::with_path(path)?;
+        self.device = Some(Device::with_path(path)?);
         Ok(())
     }
 
-    //TODO: set fps
     pub fn configure(&mut self, width: u32, height: u32) -> io::Result<()> {
-        let mut fmt = self.device.format()?;
+        let device = self
+            .device
+            .as_mut()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotConnected, "Device not initialized"))?;
+
+        let mut fmt = device.format()?;
         fmt.width = width;
         fmt.height = height;
-
         fmt.fourcc = FourCC::new(b"YUYV");
-        self.device.set_format(&fmt)?;
+        device.set_format(&fmt)?;
 
         println!("Configured: {}x{}", fmt.width, fmt.height);
         Ok(())
     }
 
     pub fn start_stream(&mut self) -> io::Result<()> {
-        let stream = Stream::with_buffers(&self.device, Type::VideoCapture, 4)?;
-        self.stream = Some(unsafe { std::mem::transmute(stream) });
+        let device = self
+            .device
+            .as_ref()
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotConnected, "Device not initialized"))?;
+
+        let stream = Stream::with_buffers(device, Type::VideoCapture, 4)?;
+        self.stream = Some(Box::new(stream));
         Ok(())
     }
 
-    pub fn capture_frame(&mut self) -> io::Result<RgbImage> {
+    pub fn capture_frame(&mut self, width: u32, height: u32) -> io::Result<RgbImage> {
         if let Some(stream) = &mut self.stream {
-            let (buf, _meta) = stream.next()?;
+            let stream_ref = stream
+                .downcast_mut::<Stream>()
+                .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Stream type mismatch"))?;
 
-            let img = Self::yuyv_to_rgb(&buf, 640, 480);
+            let (buf, _meta) = stream_ref.next()?;
+            let img = Self::yuyv_to_rgb(&buf, width, height);
             Ok(img)
         } else {
             Err(io::Error::new(

@@ -2,15 +2,19 @@ use ndarray::Array4;
 use ort::{execution_providers::TensorRTExecutionProvider, session::Session, value::Value};
 
 pub struct Detector {
-    session: Session,
+    session: Option<Session>,
 }
 
 impl Detector {
-    pub fn new<P: AsRef<std::path::Path>>(path: P) -> ort::Result<Self> {
-        let session = Session::builder()?
+    pub fn new() -> Self {
+        Self { session: None }
+    }
+
+    pub fn set_session<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
+        self.session::builder()?
             .with_execution_providers([TensorRTExecutionProvider::default().build()])?
             .commit_from_file(path)?;
-        Ok(Detector { session })
+        Ok(())
     }
 
     pub fn run_inference(

@@ -1,20 +1,23 @@
-use image::RgbImage;
+use crate::camera::Camera;
+use crate::detections::Detector;
+use image::{ImageBuffer, Rgb, RgbImage};
 use serde::{Deserialize, Serialize};
-use v4l::Device;
 
 struct AppState {
+    detector: Detector,
     latest_frame: Option<RgbImage>,
     latest_processed_frame: Option<RgbImage>,
     latest_bbox: Option<(f32, f32, f32, f32, f32)>,
     latest_yaw: Option<f32>,
     has_json: bool,
-    camera: Option<Device>,
+    camera: Option<Camera>,
     calibration_data: Option<CalibrationData>,
-}
+} 
 
 impl AppState {
     fn new() -> Self {
         Self {
+            detector: Detector::new(),
             latest_frame: None,
             latest_processed_frame: None,
             latest_bbox: None,
@@ -32,7 +35,7 @@ impl AppState {
         Ok(())
     }
 
-    async fn get_f_x(&self) -> anyhow::Result<f64> {
+    fn get_f_x(&self) -> anyhow::Result<f64> {
         if let Some(ref calib) = self.calibration_data {
             Ok(calib.camera_matrix[0][0])
         } else {
@@ -40,10 +43,10 @@ impl AppState {
         }
     }
 
-    async fn get_yaw(&mut self) -> anyhow::Result<()> {
+    fn get_yaw(&mut self) -> anyhow::Result<()> {
         if let Some(bbox) = self.latest_bbox {
             let x = bbox.0;
-            let f_x = self.get_f_x().await?;
+            let f_x = self.get_f_x()?; // Removed await
 
             let image_center = 640.0 / 2.0;
             let yaw = ((x - image_center) / f_x as f32).atan();
@@ -53,6 +56,27 @@ impl AppState {
         } else {
             Ok(())
         }
+    }
+
+    fn capture_frame(&mut self) -> Result<ImageBuffer<Rgb<u8>, Vec<u8>>, std::io::Error> {
+        if let Some(ref mut camera) = self.camera {
+            let cap = camera.capture_frame();
+            Ok(cap)
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Camera not initialized",
+            ))
+        }
+    }
+
+    fn create_detector<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
+        Detector::set_session(path);
+        Ok(())
+    }
+
+    fn run_inference(&mut self, image: &ImageBuffer<Rgb<u8>, Vec<u8>>) -> Result<Vec, ort::Error> {
+        self.detector.run_inference(image)
     }
 }
 

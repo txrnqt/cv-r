@@ -1,28 +1,14 @@
-mod camera;
-mod detections;
+#![forbid(clippy::unwrap_used)]
+#![warn(missing_docs)]
+#![doc = include_str!("../README.md")]
 
-use camera::Camera;
-use detections::dector;
-use std::{f32, io};
+pub mod nt;
+pub mod time;
 
-static mut RAW_FRAME: Vec<u8> = Vec::new();
-static mut PROCESSED_FRAME: Vec<u8> = Vec::new();
-static mut YAW: f32 = 0.0;
-static mut CAMERAS: Vec<Camera>;
-static mut DECECTOR: dector = dector::new("path");
-
-fn captureLoop() {}
-
-fn main() -> io::Result<()> {
-    let mut cam = Camera::new("/dev/video0")?;
-
-    cam.configure(640, 480)?;
-    cam.start_stream()?;
-
-    for i in 0..10 {
-        let frame = cam.capture_frame()?;
-        println!("Frame {}: {} bytes", i, frame.len());
-    }
+#[allow(missing_docs)]
+fn main() -> std::io::Result<()> {
+    // SAFETY: only called here. No other threads call this method.
+    unsafe { time::init_time() };
 
     Ok(())
 }

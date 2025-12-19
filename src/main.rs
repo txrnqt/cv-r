@@ -6,7 +6,7 @@ mod detections;
 async fn main() -> anyhow::Result<()> {
     let mut app = app_state::AppState::new("model_path").await?;
     app.activate_camera("/dev/video0").await?;
-    while true {
+    loop {
         app.capture_loop().await?;
         println!("cap {:?}", app.latest_frame());
         println!("latest results {:?}", app.latest_results());

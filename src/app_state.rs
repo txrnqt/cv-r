@@ -16,7 +16,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn load<P: AsRef<std::path::Path>>(model_path: P) -> anyhow::Result<Self> {
+    pub async fn new<P: AsRef<std::path::Path>>(model_path: P) -> anyhow::Result<Self> {
         let mut detector = Detector::new();
         detector.set_session(model_path)?;
 
@@ -156,6 +156,22 @@ impl AppState {
             Err(e) => eprintln!("Capture error: {}", e),
         }
         Ok(())
+    }
+
+    pub fn latest_results(&self) -> Option<Vec<(f32, f32, f32, f32, f32)>> {
+        self.latest_results.clone()
+    }
+
+    pub fn latest_yaw(&self) -> Option<f32> {
+        self.latest_yaw
+    }
+
+    pub fn latest_processed_frame(&self) -> Option<image::RgbImage> {
+        self.latest_processed_frame.clone()
+    }
+
+    pub fn latest_frame(&self) -> Option<image::RgbImage> {
+        self.latest_frame.clone()
     }
 }
 

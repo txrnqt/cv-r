@@ -4,7 +4,7 @@ mod detections;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut app = app_state::AppState::new("model_path").await?;
+    let mut app = app_state::AppState::new("src/content/jetson_orinnano.onnx").await?;
     app.activate_camera("/dev/video0").await?;
     loop {
         app.capture_loop().await?;

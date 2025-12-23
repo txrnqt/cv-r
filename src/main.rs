@@ -2,10 +2,17 @@ mod app_state;
 mod camera;
 mod detections;
 
+use anyhow;
+use axiom_rs::Client;
+use base64::Engine;
+use image::{ImageBuffer, RgbImage};
+use serde_json::json;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mut app = app_state::AppState::new("src/content/jetson_orinnano.onnx").await?;
     app.activate_camera("/dev/video0").await?;
+
     loop {
         app.capture_loop().await?;
         println!("cap {:?}", app.latest_frame());

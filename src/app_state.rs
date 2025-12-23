@@ -166,11 +166,11 @@ impl AppState {
         self.latest_yaw
     }
 
-    pub fn latest_processed_frame(&self) -> Option<image::RgbImage> {
+    pub fn latest_processed_frame(&self) -> Option<ImageBuffer<image::Rgb<u8>, Vec<u8>>> {
         self.latest_processed_frame.clone()
     }
 
-    pub fn latest_frame(&self) -> Option<image::RgbImage> {
+    pub fn latest_frame(&self) -> RgbImage, Vec<u8>>> {
         self.latest_frame.clone()
     }
 }

@@ -21,6 +21,7 @@ impl Camera {
 
     pub fn activate_camera<P: AsRef<std::path::Path>>(&mut self, path: P) -> anyhow::Result<()> {
         self.device = Some(Device::with_path(path)?);
+        self.start_stream()?;
         Ok(())
     }
 

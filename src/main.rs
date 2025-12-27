@@ -3,10 +3,6 @@ mod camera;
 mod detections;
 
 use anyhow;
-use axiom_rs::Client;
-use base64::Engine;
-use image::{ImageBuffer, RgbImage};
-use serde_json::json;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

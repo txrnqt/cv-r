@@ -170,7 +170,7 @@ impl AppState {
         self.latest_processed_frame.clone()
     }
 
-    pub fn latest_frame(&self) -> RgbImage, Vec<u8>>> {
+    pub fn latest_frame(&self) -> Option<ImageBuffer<image::Rgb<u8>, Vec<u8>>> {
         self.latest_frame.clone()
     }
 }
